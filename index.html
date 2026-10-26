@@ -58,7 +58,7 @@
                     <i class="fa-solid fa-sparkles"></i> กิจกรรมลุ้นรับของรางวัลพิเศษ
                 </span>
                 <h2 class="text-2xl font-bold text-slate-900">ลงทะเบียนลุ้นรางวัล</h2>
-                <p class="text-sm text-slate-500">กรอกข้อมูลและ Prompt เด็ดๆ เพื่อให้ AI สุ่มเลือกคุณ!</p>
+                <p class="text-sm text-slate-500">กรอกข้อมูลและ Prompt เด็ดๆ เพื่อให้ AI เลือกคุณ!</p>
             </div>
 
             <div class="glass-card rounded-2xl p-6 shadow-lg shadow-slate-200/50">
@@ -142,13 +142,20 @@
                                 class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-center font-bold text-slate-800 outline-none text-sm">
                         </div>
 
-                        <!-- ปุ่ม Copy all แทนที่ปุ่มสุ่ม AI เดิม -->
                         <button onclick="copyAllPromptWithData()" class="py-3 px-4 bg-gradient-to-r from-purple-600 to-brand-600 hover:from-purple-700 hover:to-brand-700 text-white font-semibold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-2 text-sm">
                             <i class="fa-solid fa-copy text-amber-300"></i><span>Copy all</span>
                         </button>
 
                         <button onclick="fetchEntries()" class="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-300 transition flex items-center justify-center gap-2 text-sm">
                             <i class="fa-solid fa-rotate-right"></i><span>รีเฟรชข้อมูลล่าสุด</span>
+                        </button>
+                    </div>
+
+                    <!-- จุดวางปุ่มล้างข้อมูลทั้งหมด แบบปลอดภัย (ซ่อนไว้ด้านล่าง ขอบเขตชัดเจน) -->
+                    <div class="pt-4 border-t border-slate-100 flex justify-between items-center">
+                        <p class="text-xs text-slate-400"><i class="fa-solid fa-circle-info"></i> ข้อมูลจะซิงค์กับ Google Sheets แบบ Real-time ทุกๆ 3 วินาที</p>
+                        <button onclick="clearAllData()" class="py-2 px-3 bg-white hover:bg-rose-50 text-rose-500 hover:text-rose-600 text-xs font-medium rounded-lg border border-rose-200 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-trash-can"></i> <span>ล้างข้อมูลทั้งหมด (เคลียร์หลังจบกิจกรรม)</span>
                         </button>
                     </div>
                 </div>
@@ -329,14 +336,12 @@
 
             let count = Math.min(Math.max(1, parseInt(document.getElementById('winner-count').value) || 1), entries.length);
 
-            // สร้างข้อความ Prompt สั่งงาน AI พร้อมดึงรายชื่อทั้งหมดตามลำดับ
             let textToCopy = `ช่วยเลือกผู้ได้รับรางวัล จำนวน ${count} คน พร้อมบอกเหตุผลว่าทำไมถึงเลือกคนนี้ จากรายชื่อและ Prompt ของผู้เข้าร่วมด้านล่างนี้:\n\n`;
 
             entries.forEach((item, index) => {
                 textToCopy += `#${index + 1} ชื่อ: ${item.name} | Prompt: ${item.message}\n`;
             });
 
-            // คัดลอกลง Clipboard
             const textArea = document.createElement('textarea');
             textArea.value = textToCopy;
             document.body.appendChild(textArea);
@@ -349,6 +354,33 @@
                 showToast('ไม่สามารถคัดลอกข้อมูลได้', 'error');
             }
             document.body.removeChild(textArea);
+        }
+
+        // --- ฟังก์ชันล้างข้อมูลทั้งหมด (มีระบบยืนยัน 2 ชั้น ป้องกันการเผลอกด) ---
+        async function clearAllData() {
+            if (!confirm("⚠️ คำเตือน: คุณต้องการล้างข้อมูลผู้เข้าร่วมทั้งหมดใช่หรือไม่?\n(ข้อมูลใน Google Sheets จะถูกลบทั้งหมดและไม่สามารถกู้คืนได้)")) {
+                return;
+            }
+            if (!confirm("⚠️ ยืนยันครั้งสุดท้าย: กดตกลงเพื่อลบข้อมูลทั้งหมด")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'clear' })
+                });
+
+                if (response.ok) {
+                    showToast('ล้างข้อมูลทั้งหมดเรียบร้อยแล้ว', 'success');
+                    fetchEntries(); // รีเฟรชตารางให้ว่างเปล่าทันที
+                } else {
+                    throw new Error('Server error');
+                }
+            } catch (err) {
+                showToast('ไม่สามารถล้างข้อมูลได้', 'error');
+            }
         }
 
         function getUserUrl() { return window.location.href.split('?')[0] + '?view=user'; }
