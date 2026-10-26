@@ -335,13 +335,13 @@
             });
         }
 
-        async function drawWinnersWithAI() {
+       async function drawWinnersWithAI() {
             if (entries.length === 0) return showToast('ยังไม่มีข้อมูลผู้เข้าร่วม', 'warning');
             let count = Math.min(Math.max(1, parseInt(document.getElementById('winner-count').value) || 1), entries.length);
 
             let apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) {
-                apiKey = prompt("🔒 กรุณาใส่ Gemini API Key ของคุณ\n(ใส่แค่ครั้งเดียว ระบบจะจำไว้ในคอมพิวเตอร์เครื่องนี้ตลอดไป):");
+                apiKey = prompt("🔒 กรุณาใส่ Gemini API Key ของคุณ\n(ระบบจะจำไว้ในคอมพิวเตอร์เครื่องนี้):");
                 if (!apiKey) {
                     return showToast('ยกเลิกการสุ่ม AI เนื่องจากไม่ได้ใส่ API Key', 'error');
                 }
@@ -374,15 +374,20 @@
                 });
                 
                 if (!res.ok) {
-                    localStorage.removeItem('gemini_api_key');
-                    throw new Error("API Key ไม่ถูกต้อง หรือโควต้าเต็ม (กรุณากดสุ่มใหม่อีกครั้ง)");
+                    const errorData = await res.json();
+                    console.error("API Error Details:", errorData);
+                    // ลบ Key ทิ้งเฉพาะกรณี Key ผิดพลาด
+                    if (res.status === 400 || res.status === 403) {
+                        localStorage.removeItem('gemini_api_key');
+                    }
+                    throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
                 }
 
                 const jsonRes = await res.json();
                 renderWinners(JSON.parse(jsonRes.candidates[0].content.parts[0].text));
             } catch (err) {
                 console.error(err);
-                showToast('เชื่อมต่อ AI ไม่สำเร็จ: ' + err.message, 'error');
+                showToast('AI Error: ' + err.message, 'error');
                 modal.classList.add('hidden'); 
             } finally {
                 loading.classList.add('hidden'); winnersList.classList.remove('hidden');
