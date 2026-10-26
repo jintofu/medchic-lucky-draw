@@ -25,7 +25,7 @@
 </head>
 <body class="min-h-screen text-slate-800 flex flex-col font-sans">
 
-    <!-- Header (No Switcher Tabs) -->
+    <!-- Header -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
         <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
             <div class="flex items-center gap-3">
@@ -53,7 +53,6 @@
 
         <!-- ================= USER VIEW (Mobile Scanner) ================= -->
         <section id="user-view" class="max-w-md mx-auto space-y-6 hidden">
-            
             <div class="text-center space-y-2 py-2">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100">
                     <i class="fa-solid fa-sparkles"></i> กิจกรรมลุ้นรับของรางวัลพิเศษ
@@ -77,7 +76,6 @@
                         </div>
                     </div>
                     <div>
-                        <!-- เปลี่ยนหัวข้อตามที่ต้องการ -->
                         <label for="user-message" class="block text-sm font-semibold text-slate-700 mb-1.5">
                             เขียน prompt ที่ให้ AI เลือกเรา <span class="text-rose-500">*</span>
                         </label>
@@ -96,7 +94,6 @@
 
         <!-- ================= ADMIN VIEW (Desktop) ================= -->
         <section id="admin-view" class="hidden">
-            
             <div id="admin-login-box" class="max-w-md mx-auto mt-8">
                 <div class="glass-card rounded-2xl p-6 md:p-8 shadow-xl border border-slate-200">
                     <div class="text-center space-y-2 mb-6">
@@ -128,7 +125,6 @@
             </div>
 
             <div id="admin-dashboard" class="hidden space-y-6">
-                
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
                     <h3 class="font-semibold text-slate-800 text-sm flex items-center justify-between">
                         <span class="flex items-center gap-2"><i class="fa-solid fa-sliders text-brand-600"></i> แผงควบคุม (ดึงข้อมูลอัตโนมัติจาก Google Sheets)</span>
@@ -154,7 +150,6 @@
                             <i class="fa-solid fa-rotate-right"></i><span>รีเฟรชข้อมูลล่าสุด</span>
                         </button>
                     </div>
-                    <p class="text-xs text-slate-400 text-right"><i class="fa-solid fa-circle-info"></i> หากต้องการลบข้อมูล หรือเพิ่มรายชื่อ สามารถเข้าไปจัดการได้ในหน้าต่าง Google Sheets โดยตรง</p>
                 </div>
 
                 <!-- Data Table -->
@@ -175,14 +170,11 @@
                         </table>
                     </div>
                 </div>
-
             </div>
         </section>
     </main>
 
     <!-- ================= MODALS ================= -->
-
-    <!-- QR Modal -->
     <div id="qr-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center space-y-5 shadow-2xl relative">
             <button onclick="closeQrModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center">
@@ -198,7 +190,6 @@
         </div>
     </div>
 
-    <!-- Fullscreen QR -->
     <div id="qr-fullscreen-modal" class="fixed inset-0 z-50 bg-slate-950 text-white hidden flex flex-col justify-between p-6 md:p-12 items-center text-center">
         <div class="w-full flex justify-end">
             <button onclick="toggleQrFullscreen()" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium border border-white/20"><i class="fa-solid fa-compress"></i> ย่อหน้าจอ</button>
@@ -212,7 +203,6 @@
         </div>
     </div>
 
-    <!-- User Thank You -->
     <div id="thankyou-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-bounce"><i class="fa-solid fa-check"></i></div>
@@ -222,7 +212,6 @@
         </div>
     </div>
 
-    <!-- AI Winner Display -->
     <div id="winner-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-3xl p-6 md:p-8 max-w-xl w-full text-center space-y-6 shadow-2xl relative my-8">
             <button onclick="closeWinnerModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
@@ -236,20 +225,18 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300"><div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm border border-slate-700"><i id="toast-icon" class="fa-solid fa-circle-info"></i><span id="toast-message"></span></div></div>
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
         // -------------------------------------------------------------
-        // สำคัญ: เอา Web App URL ของ Google Apps Script มาวางในบรรทัดด้านล่างนี้
+        // URL Google Apps Script ที่เชื่อมต่อแล้ว
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQnJmMl_MGE-NrkRZMpovAOh_37W4pKB6h0lg1w0UvYFtMXX7Wq9RsxBueu4_TTWM/exec';
         // -------------------------------------------------------------
 
         let entries = [];
         let pollingInterval = null;
 
-        // Routing System (No Switcher Tab)
         window.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             if (params.get('view') === 'user') {
@@ -261,23 +248,21 @@
             }
         });
 
-        // 1. SYSTEM: Fetch data from Google Sheets
         async function fetchEntries() {
-            if (!SCRIPT_URL || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbwQnJmMl_MGE-NrkRZMpovAOh_37W4pKB6h0lg1w0UvYFtMXX7Wq9RsxBueu4_TTWM/exec')) return;
+            if (!SCRIPT_URL) return; 
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
-                entries = data.reverse(); // เรียงจากล่าสุดขึ้นก่อน
+                entries = data.reverse(); 
                 renderEntriesTable();
             } catch (err) {
                 console.error("Fetch Data Error:", err);
             }
         }
 
-        // 2. USER: Submit Form to Google Sheets
         async function handleUserSubmit(e) {
             e.preventDefault();
-            if (!SCRIPT_URL || SCRIPT_URL.includes('https://script.google.com/macros/s/AKfycbwQnJmMl_MGE-NrkRZMpovAOh_37W4pKB6h0lg1w0UvYFtMXX7Wq9RsxBueu4_TTWM/exec')) {
+            if (!SCRIPT_URL) {
                 showToast('ระบบยังไม่ได้เชื่อมต่อฐานข้อมูล', 'error'); return;
             }
 
@@ -307,7 +292,6 @@
             }
         }
 
-        // 3. ADMIN: Authentication & Polling Sync
         function handleAdminLogin(e) {
             e.preventDefault();
             const user = document.getElementById('admin-username').value;
@@ -328,8 +312,8 @@
                 document.getElementById('sync-indicator').classList.remove('hidden');
                 document.getElementById('sync-indicator').classList.add('flex');
                 
-                fetchEntries(); // Initial Fetch
-                pollingInterval = setInterval(fetchEntries, 3000); // Auto Sync every 3 seconds
+                fetchEntries(); 
+                pollingInterval = setInterval(fetchEntries, 3000); 
             }
         }
 
@@ -351,19 +335,17 @@
             });
         }
 
-        // 4. ADMIN: Gemini AI Selection (อัปเดตระบบจำ API Key ถาวร)
         async function drawWinnersWithAI() {
             if (entries.length === 0) return showToast('ยังไม่มีข้อมูลผู้เข้าร่วม', 'warning');
             let count = Math.min(Math.max(1, parseInt(document.getElementById('winner-count').value) || 1), entries.length);
 
-            // --- 🌟 อัปเดต: ใช้ localStorage เพื่อให้เบราว์เซอร์จำ API Key ไว้ถาวร ---
             let apiKey = localStorage.getItem('gemini_api_key');
             if (!apiKey) {
-                apiKey = prompt("🔒 กรุณาใส่ Gemini API Key ของคุณ\n(ใส่แค่ครั้งเดียว ระบบจะจำไว้ในคอมพิวเตอร์เครื่องนี้ตลอดไป ไม่ต้องก๊อปมาวางอีก):");
+                apiKey = prompt("🔒 กรุณาใส่ Gemini API Key ของคุณ\n(ใส่แค่ครั้งเดียว ระบบจะจำไว้ในคอมพิวเตอร์เครื่องนี้ตลอดไป):");
                 if (!apiKey) {
                     return showToast('ยกเลิกการสุ่ม AI เนื่องจากไม่ได้ใส่ API Key', 'error');
                 }
-                localStorage.setItem('gemini_api_key', apiKey.trim()); // บันทึกลงเครื่อง
+                localStorage.setItem('gemini_api_key', apiKey.trim());
             }
 
             const modal = document.getElementById('winner-modal');
@@ -392,9 +374,8 @@
                 });
                 
                 if (!res.ok) {
-                    // 🌟 ถ้าเผลอใส่ API Key ผิด ระบบจะล้างค่าทิ้งให้ เพื่อให้กรอกใหม่รอบหน้าได้
                     localStorage.removeItem('gemini_api_key');
-                    throw new Error("API Key ไม่ถูกต้อง หรือโควต้าเต็ม (กรุณากดสุ่มใหม่อีกครั้งเพื่อใส่ Key ใหม่)");
+                    throw new Error("API Key ไม่ถูกต้อง หรือโควต้าเต็ม (กรุณากดสุ่มใหม่อีกครั้ง)");
                 }
 
                 const jsonRes = await res.json();
@@ -427,7 +408,6 @@
             });
         }
 
-        // 5. UI Utilities (QR Codes & Modals)
         function getUserUrl() { return window.location.href.split('?')[0] + '?view=user'; }
         
         function openQrModal() {
