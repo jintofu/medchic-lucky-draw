@@ -3,33 +3,839 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEDCHIC - Lucky Draw</title>
+    <title>MedChic - ระบบสุ่มรางวัล Lucky Draw</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Kanit & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti for Winner Celebration -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- QRCode.js Library for Dynamic QR Code Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: { medchic: '#0056b3' }
+                    fontFamily: {
+                        sans: ['Kanit', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
                 }
             }
         }
     </script>
+    <style>
+        body { background-color: #f8fafc; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans min-h-screen flex flex-col">
+<body class="min-h-screen text-slate-800 flex flex-col font-sans">
 
-    <!-- Header -->
-    <header class="bg-medchic text-white p-4 shadow-md text-center">
-        <h1 class="text-2xl font-bold tracking-wide">MEDCHIC Lucky Draw</h1>
+    <!-- Top Navigation Bar (Test Switcher) -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-xl">
+                    <i class="fa-solid fa-gift"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-none text-slate-900">MedChic <span class="text-brand-600">Lucky Draw</span></h1>
+                    <p class="text-xs text-slate-500 mt-0.5">ระบบสุ่มรางวัลกิจกรรม</p>
+                </div>
+            </div>
+
+            <!-- Role Switcher Tabs -->
+            <div class="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-sm font-medium">
+                <button id="nav-user-btn" onclick="switchRole('user')" class="px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 bg-white shadow-sm text-brand-600 font-semibold">
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    <span>หน้าสำหรับ User</span>
+                </button>
+                <button id="nav-admin-btn" onclick="switchRole('admin')" class="px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-slate-600 hover:text-slate-900">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>หน้าสำหรับ Admin</span>
+                    <span id="admin-badge" class="hidden w-2 h-2 rounded-full bg-emerald-500"></span>
+                </button>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content Area -->
-    <main id="app-container" class="flex-grow flex items-center justify-center p-4">
-        <!-- เนื้อหาจะถูกแทรกที่นี่ผ่าน JavaScript -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ================= USER VIEW ================= -->
+        <section id="user-view" class="max-w-md mx-auto space-y-6">
+            
+            <div class="text-center space-y-2 py-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-600 border border-brand-100">
+                    <i class="fa-solid fa-sparkles"></i> กิจกรรมลุ้นรับของรางวัลพิเศษ
+                </span>
+                <h2 class="text-2xl font-bold text-slate-900">ลงทะเบียนลุ้นรางวัล</h2>
+                <p class="text-sm text-slate-500">กรอกข้อมูลและข้อความดีๆ เพื่อให้ AI สุ่มเลือกคุณ!</p>
+            </div>
+
+            <div class="bg-gradient-to-br from-indigo-500 to-brand-700 rounded-2xl p-5 text-white shadow-xl shadow-brand-500/10 text-center relative overflow-hidden">
+                <div class="absolute -right-4 -bottom-4 w-24 h-24 bg-white/10 rounded-full blur-xl"></div>
+                <div class="relative z-10 flex flex-col items-center">
+                    <div class="bg-white p-2.5 rounded-xl shadow-inner mb-3">
+                        <img id="user-qr-img" src="" alt="QR Code" class="w-28 h-28 rounded-lg" onerror="this.onerror=null; this.src='https://placehold.co/120x120/4f46e5/ffffff?text=SCAN+ME';">
+                    </div>
+                    <p class="text-xs font-medium text-indigo-100">สแกน QR Code นี้เพื่อเข้าสู่หน้าลงทะเบียน</p>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl p-6 shadow-lg shadow-slate-200/50">
+                <form id="user-draw-form" onsubmit="handleUserSubmit(event)" class="space-y-5">
+                    <div>
+                        <label for="user-name" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            ชื่อ-นามสกุล / ชื่อเล่น <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-regular fa-user"></i>
+                            </div>
+                            <input type="text" id="user-name" required placeholder="เช่น หมอเมด / น้องชิค" 
+                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="user-message" class="block text-sm font-semibold text-slate-700 mb-1.5">
+                            ข้อความ / เหตุผลที่อยากได้รางวัล <span class="text-rose-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <textarea id="user-message" required rows="4" placeholder="บอกเหตุผลความตั้งใจ คำอวยพร หรือข้อความสนุกๆ เพื่อให้ AI สะดุดตาคุณ..."
+                                class="w-full p-3.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm resize-none"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full py-3.5 px-4 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 text-white font-semibold rounded-xl shadow-lg shadow-brand-500/25 active:scale-[0.99] transition duration-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>ส่งข้อมูลร่วมสนุก</span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- ================= ADMIN VIEW ================= -->
+        <section id="admin-view" class="hidden">
+            
+            <div id="admin-login-box" class="max-w-md mx-auto mt-8">
+                <div class="glass-card rounded-2xl p-6 md:p-8 shadow-xl border border-slate-200">
+                    <div class="text-center space-y-2 mb-6">
+                        <div class="w-12 h-12 bg-brand-50 text-brand-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                            <i class="fa-solid fa-lock"></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-slate-900">เข้าสู่ระบบ Admin</h2>
+                        <p class="text-xs text-slate-500">โปรดเข้าสู่ระบบเพื่อจัดการและสุ่มรางวัล</p>
+                    </div>
+
+                    <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Username</label>
+                            <input type="text" id="admin-username" required placeholder="medchic"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                            <input type="password" id="admin-password" required placeholder="••••"
+                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
+                        </div>
+
+                        <div id="login-error" class="hidden text-xs text-rose-500 bg-rose-50 p-2.5 rounded-lg border border-rose-200 flex items-center gap-2">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            <span>Username หรือ Password ไม่ถูกต้อง</span>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl shadow-md transition text-sm">
+                            เข้าสู่ระบบ
+                        </button>
+                    </form>
+                    <div class="mt-4 pt-4 border-t border-slate-100 text-center">
+                        <p class="text-xs text-slate-400">Default Demo: <span class="font-mono text-slate-600">medchic / 1234</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-dashboard" class="hidden space-y-6">
+                
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-slate-900">แผงควบคุมการสุ่มรางวัล</h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Online</span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">ผู้ลงทะเบียนทั้งหมด: <span id="stat-total-count" class="font-bold text-brand-600 text-sm">0</span> คน</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                        <button onclick="logoutAdmin()" class="px-3 py-2 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 border border-slate-200">
+                            <i class="fa-solid fa-right-from-bracket"></i> ออกจากระบบ
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h3 class="font-semibold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-brand-600"></i> ตั้งค่าและเครื่องมือการสุ่ม
+                    </h3>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                        <button onclick="openQrModal()" class="py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-md shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-qrcode text-base"></i>
+                            <span>แสดง QR Code สำหรับสแกน</span>
+                        </button>
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col justify-between">
+                            <label class="text-xs font-semibold text-slate-600 mb-1">จำนวนผู้ได้รับรางวัล (คน)</label>
+                            <div class="flex items-center gap-2">
+                                <input type="number" id="winner-count" min="1" max="50" value="1" 
+                                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-brand-500 font-bold text-slate-800 outline-none text-sm">
+                            </div>
+                        </div>
+
+                        <button onclick="drawWinnersWithAI()" class="py-3 px-4 bg-gradient-to-r from-purple-600 to-brand-600 hover:from-purple-700 hover:to-brand-700 text-white font-semibold rounded-xl shadow-md shadow-brand-500/20 active:scale-95 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                            <span>สุ่มผู้โชคดีด้วย AI</span>
+                        </button>
+
+                        <button onclick="copyAllData()" class="py-3 px-4 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-regular fa-copy"></i>
+                            <span>คัดลอกข้อมูลทั้งหมด</span>
+                        </button>
+
+                        <div class="flex items-center gap-2">
+                            <button onclick="addMockData()" title="เพิ่มข้อมูลทดสอบ" class="flex-1 py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-plus text-emerald-600"></i> Mockup
+                            </button>
+                            <button onclick="clearAllEntries()" title="ลบข้อมูลทั้งหมด" class="flex-1 py-3 px-2 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold rounded-xl border border-rose-200 transition flex items-center justify-center gap-1">
+                                <i class="fa-regular fa-trash-can"></i> ล้าง
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-list-ol text-brand-600"></i> รายชื่อผู้ส่งเข้าร่วมตามลำดับ
+                        </h3>
+                        <span class="text-xs text-slate-400">เรียงตามเวลากรอบล่าสุด</span>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-xs font-semibold border-b border-slate-200">
+                                    <th class="p-3 pl-4 w-16">ลำดับ</th>
+                                    <th class="p-3 w-48">ชื่อ - นามสกุล / ชื่อเล่น</th>
+                                    <th class="p-3">ข้อความ / เหตุผลที่อยากได้รางวัล</th>
+                                    <th class="p-3 w-36">เวลาที่ลงทะเบียน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="entries-table-body" class="divide-y divide-slate-100 text-sm text-slate-700">
+                                <!-- Dynamic Render -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="empty-state" class="hidden py-12 text-center space-y-3">
+                        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto text-lg">
+                            <i class="fa-solid fa-inbox"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-500">ยังไม่มีข้อมูลผู้เข้าร่วมสนุก</p>
+                        <p class="text-xs text-slate-400">สามารถใช้ปุ่ม "Mockup" ด้านบนเพื่อเพิ่มข้อมูลตัวอย่างในการทดสอบ</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
     </main>
 
-    <script src="script.js"></script>
+    <!-- ================= MODALS & TOASTS ================= -->
+
+    <!-- QR Modal -->
+    <div id="qr-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full text-center space-y-5 shadow-2xl relative">
+            <button onclick="closeQrModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="space-y-1">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <i class="fa-solid fa-qrcode"></i> Live QR Code Generator
+                </span>
+                <h3 class="text-xl font-bold text-slate-900">QR Code สำหรับลงทะเบียน</h3>
+                <p class="text-xs text-slate-500">ผู้เข้าร่วมกิจกรรมสแกน QR Code นี้เพื่อเข้าสู่หน้ากรอกรายชื่อ</p>
+            </div>
+            <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 inline-block shadow-inner">
+                <div id="admin-qrcode-render" class="flex justify-center items-center"></div>
+            </div>
+            <div class="bg-slate-100 p-2.5 rounded-xl border border-slate-200 flex items-center justify-between text-xs text-slate-600 font-mono overflow-hidden">
+                <span id="qr-url-display" class="truncate pr-2">https://...</span>
+                <button onclick="copyUserUrl()" class="px-2.5 py-1 bg-white hover:bg-slate-200 text-slate-800 rounded-lg shadow-sm font-sans font-semibold border border-slate-300 text-xs flex items-center gap-1 shrink-0">
+                    <i class="fa-regular fa-copy"></i> คัดลอก
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <button onclick="copyUserUrl()" class="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-link"></i> คัดลอกลิงก์
+                </button>
+                <button onclick="toggleQrFullscreen()" class="py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-expand"></i> ฉายขึ้นจอใหญ่
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Presentation QR Modal -->
+    <div id="qr-fullscreen-modal" class="fixed inset-0 z-50 bg-slate-950 text-white hidden flex flex-col justify-between p-6 md:p-12 items-center text-center">
+        <div class="w-full flex justify-end">
+            <button onclick="toggleQrFullscreen()" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-medium transition flex items-center gap-2 border border-white/20">
+                <i class="fa-solid fa-compress"></i> ปิดหน้าจอขยาย
+            </button>
+        </div>
+        <div class="max-w-xl w-full my-auto space-y-6 flex flex-col items-center">
+            <div class="space-y-2">
+                <span class="px-4 py-1.5 rounded-full bg-brand-500/20 text-brand-300 border border-brand-400/30 text-sm font-semibold tracking-wide uppercase">
+                    MedChic Lucky Draw Event
+                </span>
+                <h2 class="text-3xl md:text-5xl font-black text-white tracking-tight">สแกนเพื่อร่วมลุ้นรางวัล!</h2>
+                <p class="text-slate-400 text-base md:text-lg">กรอกชื่อและข้อความของคุณผ่านสมาร์ทโฟนได้ทันที</p>
+            </div>
+            <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl shadow-indigo-500/20 inline-block border-4 border-indigo-400">
+                <div id="fs-qrcode-render" class="flex justify-center items-center"></div>
+            </div>
+            <p id="fs-qr-url" class="font-mono text-sm text-slate-400 bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-800 max-w-md truncate">
+                https://...
+            </p>
+        </div>
+    </div>
+
+    <!-- User Thank You Popup -->
+    <div id="thankyou-modal" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl transform transition-all duration-300 scale-95 opacity-0" id="thankyou-card">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold animate-bounce">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-xl font-bold text-slate-900">ส่งข้อมูลเรียบร้อยแล้ว!</h3>
+                <p class="text-xs text-slate-500">ระบบได้บันทึกรายชื่อของคุณสำหรับการสุ่มรางวัลเรียบร้อยแล้ว ขอให้คุณโชคดี!</p>
+            </div>
+            <button onclick="closeThankYouModal()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-sm transition">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- AI Winner Result Modal (Updated structure for reasoning) -->
+    <div id="winner-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-xl w-full text-center space-y-6 shadow-2xl relative my-8">
+            <button onclick="closeWinnerModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 text-slate-400 hover:text-slate-600 rounded-full flex items-center justify-center">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div class="space-y-2">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
+                    <i class="fa-solid fa-crown text-amber-500"></i> AI Winner Announcement
+                </div>
+                <h3 class="text-2xl font-extrabold text-slate-900">🎉 โฉมหน้าผู้ได้รับรางวัล!</h3>
+            </div>
+
+            <div id="ai-loading" class="py-10 space-y-4">
+                <div class="w-14 h-14 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto"></div>
+                <p class="text-sm font-medium text-slate-600 animate-pulse">Gemini AI กำลังวิเคราะห์ข้อความและคัดเลือกผู้ชนะ...</p>
+            </div>
+
+            <div id="ai-winners-list" class="hidden space-y-4 text-left max-h-[60vh] overflow-y-auto pr-1">
+                <!-- Dynamically Inserted Winners -->
+            </div>
+
+            <button onclick="closeWinnerModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-sm transition">
+                ปิดหน้าต่าง
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm border border-slate-700">
+            <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toast-message">แจ้งเตือนสำเร็จ</span>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        const STORAGE_KEY = 'medchic_draw_entries';
+        const AUTH_KEY = 'medchic_admin_logged';
+        let entries = [];
+        let currentRole = 'user';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadEntries();
+            checkAdminAuthStatus();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('view') === 'user' || params.get('role') === 'user') {
+                switchRole('user');
+            }
+            updateDynamicQrInUserView();
+        });
+
+        function getUserRegistrationUrl() {
+            const baseUrl = window.location.href.split('?')[0];
+            return `${baseUrl}?view=user`;
+        }
+
+        function updateDynamicQrInUserView() {
+            const userQrImg = document.getElementById('user-qr-img');
+            if (userQrImg) {
+                const userUrl = getUserRegistrationUrl();
+                userQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(userUrl)}`;
+            }
+        }
+
+        function openQrModal() {
+            const userUrl = getUserRegistrationUrl();
+            document.getElementById('qr-url-display').innerText = userUrl;
+            const container = document.getElementById('admin-qrcode-render');
+            container.innerHTML = '';
+            new QRCode(container, {
+                text: userUrl, width: 220, height: 220, colorDark : "#312e81", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+            });
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQrModal() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        function copyUserUrl() {
+            const userUrl = getUserRegistrationUrl();
+            const textArea = document.createElement('textarea');
+            textArea.value = userUrl;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast('คัดลอกลิงก์สำหรับสแกนเรียบร้อยแล้ว', 'success');
+            } catch (err) {
+                showToast('ไม่สามารถคัดลอกลิงก์ได้', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function toggleQrFullscreen() {
+            const fsModal = document.getElementById('qr-fullscreen-modal');
+            const isHidden = fsModal.classList.contains('hidden');
+            if (isHidden) {
+                const userUrl = getUserRegistrationUrl();
+                const container = document.getElementById('fs-qrcode-render');
+                container.innerHTML = '';
+                new QRCode(container, {
+                    text: userUrl, width: 320, height: 320, colorDark : "#312e81", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H
+                });
+                document.getElementById('fs-qr-url').innerText = userUrl;
+                fsModal.classList.remove('hidden');
+            } else {
+                fsModal.classList.add('hidden');
+            }
+        }
+
+        function loadEntries() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            entries = data ? JSON.parse(data) : [];
+            renderEntriesTable();
+            updateStats();
+        }
+
+        function saveEntries() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+            renderEntriesTable();
+            updateStats();
+        }
+
+        function switchRole(role) {
+            currentRole = role;
+            const userView = document.getElementById('user-view');
+            const adminView = document.getElementById('admin-view');
+            const userBtn = document.getElementById('nav-user-btn');
+            const adminBtn = document.getElementById('nav-admin-btn');
+
+            if (role === 'user') {
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+                userBtn.className = "px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 bg-white shadow-sm text-brand-600 font-semibold";
+                adminBtn.className = "px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-slate-600 hover:text-slate-900";
+            } else {
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+                adminBtn.className = "px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 bg-white shadow-sm text-brand-600 font-semibold";
+                userBtn.className = "px-4 py-1.5 rounded-lg flex items-center gap-2 transition-all duration-200 text-slate-600 hover:text-slate-900";
+            }
+        }
+
+        function handleUserSubmit(e) {
+            e.preventDefault();
+            const nameInput = document.getElementById('user-name');
+            const messageInput = document.getElementById('user-message');
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (!name || !message) return;
+            const newEntry = {
+                id: Date.now(),
+                name: name,
+                message: message,
+                timestamp: new Date().toLocaleString('th-TH', { hour12: false })
+            };
+
+            entries.push(newEntry);
+            saveEntries();
+            nameInput.value = '';
+            messageInput.value = '';
+            showThankYouModal();
+        }
+
+        function showThankYouModal() {
+            const modal = document.getElementById('thankyou-modal');
+            const card = document.getElementById('thankyou-card');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeThankYouModal() {
+            const modal = document.getElementById('thankyou-modal');
+            const card = document.getElementById('thankyou-card');
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 200);
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('admin-username').value.trim();
+            const pass = document.getElementById('admin-password').value.trim();
+            const errorBox = document.getElementById('login-error');
+
+            if (user === 'medchic' && pass === '1234') {
+                localStorage.setItem(AUTH_KEY, 'true');
+                errorBox.classList.add('hidden');
+                checkAdminAuthStatus();
+                showToast('เข้าสู่ระบบสำเร็จ', 'success');
+            } else {
+                errorBox.classList.remove('hidden');
+            }
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem(AUTH_KEY);
+            checkAdminAuthStatus();
+            showToast('ออกจากระบบเรียบร้อย', 'info');
+        }
+
+        function checkAdminAuthStatus() {
+            const isLoggedIn = localStorage.getItem(AUTH_KEY) === 'true';
+            const loginBox = document.getElementById('admin-login-box');
+            const dashboard = document.getElementById('admin-dashboard');
+            const adminBadge = document.getElementById('admin-badge');
+
+            if (isLoggedIn) {
+                loginBox.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+                adminBadge.classList.remove('hidden');
+            } else {
+                loginBox.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                adminBadge.classList.add('hidden');
+            }
+        }
+
+        function renderEntriesTable() {
+            const tbody = document.getElementById('entries-table-body');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            if (entries.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            entries.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition";
+                tr.innerHTML = `
+                    <td class="p-3 pl-4 font-bold text-brand-600">#${index + 1}</td>
+                    <td class="p-3 font-semibold text-slate-800">${escapeHtml(item.name)}</td>
+                    <td class="p-3 text-slate-600 leading-relaxed">${escapeHtml(item.message)}</td>
+                    <td class="p-3 text-xs text-slate-400">${item.timestamp}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total-count').textContent = entries.length;
+        }
+
+        function copyAllData() {
+            if (entries.length === 0) {
+                showToast('ไม่มีข้อมูลให้คัดลอก', 'warning');
+                return;
+            }
+            const formattedText = entries.map((item, index) => `#${index + 1} ${item.name}: ${item.message}`).join('\n');
+            const textArea = document.createElement('textarea');
+            textArea.value = formattedText;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast(`คัดลอกข้อมูลเรียบร้อย (${entries.length} รายการ)`, 'success');
+            } catch (err) {
+                showToast('ไม่สามารถคัดลอกข้อมูลได้', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function addMockData() {
+            const mockList = [
+                { name: "หมอเป้ MedChic", message: "อยากได้รางวัลไปแจกน้องๆ ในทีมพัฒนาซอฟต์แวร์ครับ!" },
+                { name: "นิว สายนอนน้อย", message: "ขอให้สุ่มได้รางวัลนี้ จะเอาไปเติมกำลังใจตอนเข้าเวรดึกครับ" },
+                { name: "แอนนี่ การ์เดน", message: "เพิ่งสแกนเข้ามาคนแรกๆ เลย ขอความโชคดีอยู่กับเราด้วยเถอะ สาธุ!" },
+                { name: "กอล์ฟ ไอทีมช.", message: "ถ้าได้รางวัลจะเลี้ยงกาแฟเพื่อนร่วมงานทั้งแผนกเลยครับ" },
+                { name: "ปาย Marketing", message: "ขอให้ AI ตาดี สุ่มเจอข้อความสุดปังอันนี้ด้วยนะคะ ❤️ MedChic" }
+            ];
+
+            mockList.forEach(m => {
+                entries.push({
+                    id: Date.now() + Math.random(),
+                    name: m.name,
+                    message: m.message,
+                    timestamp: new Date().toLocaleString('th-TH', { hour12: false })
+                });
+            });
+            saveEntries();
+            showToast('เพิ่มข้อมูลทดสอบ 5 รายการเรียบร้อย', 'success');
+        }
+
+        function clearAllEntries() {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลผู้เข้าร่วมทั้งหมด?')) {
+                entries = [];
+                saveEntries();
+                showToast('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว', 'info');
+            }
+        }
+
+        // --- AI WINNER SELECTION (UPDATED FOR REASONING) ---
+        async function drawWinnersWithAI() {
+            if (entries.length === 0) {
+                showToast('โปรดเพิ่มข้อมูลผู้เข้าร่วมก่อนสุ่มรางวัล', 'warning');
+                return;
+            }
+
+            const winnerCountInput = document.getElementById('winner-count');
+            let count = parseInt(winnerCountInput.value) || 1;
+            count = Math.min(Math.max(1, count), entries.length);
+
+            const modal = document.getElementById('winner-modal');
+            const loading = document.getElementById('ai-loading');
+            const winnersList = document.getElementById('ai-winners-list');
+
+            modal.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            winnersList.classList.add('hidden');
+            winnersList.innerHTML = '';
+
+            try {
+                const selectedWinners = await callGeminiToSelectWinners(entries, count);
+                renderWinners(selectedWinners);
+            } catch (error) {
+                console.warn('Gemini API Fallback triggered:', error);
+                const fallbackWinners = localRandomSelection(entries, count);
+                renderWinners(fallbackWinners);
+            } finally {
+                loading.classList.add('hidden');
+                winnersList.classList.remove('hidden');
+                triggerConfetti();
+            }
+        }
+
+        async function callGeminiToSelectWinners(userEntries, count) {
+            const apiKey = ""; // Canvas framework handles API key injection automatically
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            // อัปเดต Prompt ให้ AI ระบุ "เกณฑ์ที่ใช้เลือก" และ "เหตุผลที่เลือก"
+            const userPrompt = `
+คุณคือ AI กรรมการตัดสินรางวัลของกิจกรรม MedChic Lucky Draw
+นี่คือรายชื่อผู้เข้าร่วมทั้งหมด:
+${JSON.stringify(userEntries.map(e => ({ id: e.id, name: e.name, message: e.message })))}
+
+ภารกิจ:
+ให้คุณวิเคราะห์ข้อความของผู้เข้าร่วม และ "คัดเลือกผู้โชคดี" จำนวน ${count} คน ที่มีข้อความโดดเด่นที่สุด
+โดยต้องระบุเกณฑ์ที่ใช้เลือกอย่างชัดเจน (เช่น ความคิดสร้างสรรค์, ความฮา, ความพยายาม, ความน่ารัก ฯลฯ) และอธิบายเหตุผลว่าทำไมข้อความนี้ถึงชนะใจคุณ พร้อมคำอวยพรสั้นๆ
+
+ให้ส่งคำตอบกลับมาเป็น JSON Format ที่มีโครงสร้างดังนี้เท่านั้น (ห้ามใส่ Markdown text ใดๆ นอกเหนือจาก JSON array):
+[
+  {
+    "id": 12345,
+    "name": "ชื่อผู้โชคดี",
+    "message": "ข้อความเดิมของผู้โชคดี",
+    "criteria": "เกณฑ์ที่ใช้ตัดสิน (เช่น รางวัลสายฮา, รางวัลคนสู้ชีวิต)",
+    "reason": "เหตุผลที่เลือกคนนี้ (อ้างอิงจากข้อความของเขา) พร้อมคำยินดี"
+  }
+]
+`;
+            const payload = {
+                contents: [{ parts: [{ text: userPrompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`Gemini API Error status: ${response.status}`);
+
+            const result = await response.json();
+            const textResult = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (textResult) {
+                return JSON.parse(textResult);
+            } else {
+                throw new Error("Invalid response format from Gemini");
+            }
+        }
+
+        function localRandomSelection(userEntries, count) {
+            const shuffled = [...userEntries].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, count);
+            const criteriaList = ["ความดวงดีล้วนๆ", "ออร่าผู้ชนะ", "แต้มบุญทำงาน", "ระบบสุ่มรักคนนี้"];
+            const comments = [
+                "ระบบสุ่มทำงานแล้วหยุดที่คุณพอดีเป๊ะ! โชคใหญ่อยู่ในมือคุณแล้ว",
+                "ไม่มีเหตุผลอะไรมากไปกว่าคุณคือคนดวงดีที่สุดในรอบนี้!",
+                "แม้ไม่ได้ใช้ AI เลือก แต่ระบบก็สัมผัสได้ถึงออร่าความโชคดีของคุณ"
+            ];
+
+            return selected.map(item => ({
+                id: item.id,
+                name: item.name,
+                message: item.message,
+                criteria: criteriaList[Math.floor(Math.random() * criteriaList.length)],
+                reason: comments[Math.floor(Math.random() * comments.length)]
+            }));
+        }
+
+        function renderWinners(winners) {
+            const winnersList = document.getElementById('ai-winners-list');
+            winnersList.innerHTML = '';
+
+            winners.forEach((winner, idx) => {
+                const card = document.createElement('div');
+                card.className = "p-5 rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 shadow-sm relative overflow-hidden text-left space-y-4";
+                
+                // ออกแบบ UI เพื่อแสดงผลเหตุผลและเกณฑ์การตัดสินให้สวยงาม
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="px-3 py-1 bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-bold text-xs rounded-full shadow-sm">
+                            ผู้โชคดีคนที่ ${idx + 1}
+                        </span>
+                        <i class="fa-solid fa-gift text-brand-500 text-lg"></i>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-slate-900 text-xl">${escapeHtml(winner.name)}</h4>
+                        <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 mt-3 relative">
+                            <i class="fa-solid fa-quote-left absolute top-3 left-3 text-indigo-200/50 text-xl"></i>
+                            <p class="text-sm text-slate-700 italic font-medium pl-6 leading-relaxed">"${escapeHtml(winner.message)}"</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100 space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-medal text-sm"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-800 uppercase tracking-wide">เกณฑ์ที่ชนะใจ AI</h5>
+                                <p class="text-sm text-slate-600 font-medium">${escapeHtml(winner.criteria || 'สุ่มโดนใจ AI')}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fa-solid fa-robot text-sm"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-xs font-bold text-slate-800 uppercase tracking-wide">ทำไมถึงเลือกคนนี้?</h5>
+                                <p class="text-sm text-slate-600 leading-relaxed">${escapeHtml(winner.reason || winner.aiComment || '')}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                winnersList.appendChild(card);
+            });
+        }
+
+        function closeWinnerModal() {
+            document.getElementById('winner-modal').classList.add('hidden');
+        }
+
+        function triggerConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#4f46e5', '#10b981', '#f59e0b', '#ec4899'] });
+            }
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.textContent = message;
+
+            if (type === 'success') { toastIcon.className = "fa-solid fa-circle-check text-emerald-400"; } 
+            else if (type === 'warning') { toastIcon.className = "fa-solid fa-triangle-exclamation text-amber-400"; } 
+            else if (type === 'error') { toastIcon.className = "fa-solid fa-circle-xmark text-rose-400"; } 
+            else { toastIcon.className = "fa-solid fa-circle-info text-sky-400"; }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+    </script>
 </body>
 </html>
