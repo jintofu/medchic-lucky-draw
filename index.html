@@ -142,8 +142,9 @@
                                 class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-center font-bold text-slate-800 outline-none text-sm">
                         </div>
 
-                        <button onclick="drawWinnersWithAI()" class="py-3 px-4 bg-gradient-to-r from-purple-600 to-brand-600 hover:from-purple-700 hover:to-brand-700 text-white font-semibold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-2 text-sm">
-                            <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i><span>สุ่มด้วย AI ทันที</span>
+                        <!-- ปุ่ม Copy all แทนที่ปุ่มสุ่ม AI เดิม -->
+                        <button onclick="copyAllPromptWithData()" class="py-3 px-4 bg-gradient-to-r from-purple-600 to-brand-600 hover:from-purple-700 hover:to-brand-700 text-white font-semibold rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-2 text-sm">
+                            <i class="fa-solid fa-copy text-amber-300"></i><span>Copy all</span>
                         </button>
 
                         <button onclick="fetchEntries()" class="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl border border-slate-300 transition flex items-center justify-center gap-2 text-sm">
@@ -212,25 +213,11 @@
         </div>
     </div>
 
-    <div id="winner-modal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-xl w-full text-center space-y-6 shadow-2xl relative my-8">
-            <button onclick="closeWinnerModal()" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 rounded-full"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-2xl font-extrabold text-slate-900">🎉 โฉมหน้าผู้ได้รับรางวัล!</h3>
-            <div id="ai-loading" class="py-10 space-y-4">
-                <div class="w-14 h-14 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto"></div>
-                <p class="text-sm font-medium text-slate-600 animate-pulse">กำลังสุ่มและวิเคราะห์ผู้ชนะ...</p>
-            </div>
-            <div id="ai-winners-list" class="hidden space-y-4 text-left max-h-[60vh] overflow-y-auto pr-1"></div>
-            <button onclick="closeWinnerModal()" class="w-full py-3 bg-slate-900 text-white rounded-xl text-sm">ปิดหน้าต่าง</button>
-        </div>
-    </div>
-
     <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300"><div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-sm border border-slate-700"><i id="toast-icon" class="fa-solid fa-circle-info"></i><span id="toast-message"></span></div></div>
 
     <!-- ================= JAVASCRIPT LOGIC ================= -->
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwQnJmMl_MGE-NrkRZMpovAOh_37W4pKB6h0lg1w0UvYFtMXX7Wq9RsxBueu4_TTWM/exec';
-        const API_KEY = 'AQ.Ab8RN6LVw73997FN3qJcbRe-MontBM6cLGjeXAoXI7bUku4whQ';
 
         let entries = [];
         let pollingInterval = null;
@@ -333,79 +320,35 @@
             });
         }
 
-        // --- ระบบสุ่มรางวัลอัจฉริยะ พร้อม Fallback ป้องกัน Failed to fetch ---
-        async function drawWinnersWithAI() {
-            if (entries.length === 0) return showToast('ยังไม่มีข้อมูลผู้เข้าร่วม', 'warning');
+        // --- ฟังก์ชัน Copy all สำหรับคัดลอก Prompt และข้อมูลทั้งหมดตามลำดับ ---
+        function copyAllPromptWithData() {
+            if (entries.length === 0) {
+                showToast('ยังไม่มีข้อมูลผู้เข้าร่วม', 'warning');
+                return;
+            }
+
             let count = Math.min(Math.max(1, parseInt(document.getElementById('winner-count').value) || 1), entries.length);
 
-            const modal = document.getElementById('winner-modal');
-            const loading = document.getElementById('ai-loading');
-            const winnersList = document.getElementById('ai-winners-list');
-            modal.classList.remove('hidden'); loading.classList.remove('hidden'); winnersList.classList.add('hidden');
+            // สร้างข้อความ Prompt สั่งงาน AI พร้อมดึงรายชื่อทั้งหมดตามลำดับ
+            let textToCopy = `ช่วยเลือกผู้ได้รับรางวัล จำนวน ${count} คน พร้อมบอกเหตุผลว่าทำไมถึงเลือกคนนี้ จากรายชื่อและ Prompt ของผู้เข้าร่วมด้านล่างนี้:\n\n`;
 
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-                
-                const userPrompt = `
-                คุณคือ AI กรรมการตัดสินรางวัลของกิจกรรม MedChic Lucky Draw
-                นี่คือ Prompt จากผู้เข้าร่วมทั้งหมด: ${JSON.stringify(entries.map(e => ({ id: e.id, name: e.name, message: e.message })))}
-                ภารกิจ: วิเคราะห์ Prompt ทั้งหมด และคัดเลือกผู้ชนะ ${count} คน ที่เขียนได้โดดเด่นและสร้างสรรค์ที่สุด
-                ส่งกลับมาเป็น JSON array (ห้ามมี Markdown อื่น):
-                [ { "name": "ชื่อ", "message": "Prompt เดิม", "criteria": "เกณฑ์ที่ชนะ", "reason": "เหตุผลวิเคราะห์" } ]
-                `;
-
-                const res = await fetch(apiUrl, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        contents: [{ parts: [{ text: userPrompt }] }], 
-                        generationConfig: { responseMimeType: "application/json" } 
-                    }) 
-                });
-                
-                if (!res.ok) {
-                    throw new Error(`HTTP Error ${res.status}`);
-                }
-
-                const jsonRes = await res.json();
-                const textOutput = jsonRes.candidates?.[0]?.content?.parts?.[0]?.text;
-                renderWinners(JSON.parse(textOutput));
-            } catch (err) {
-                console.warn('Network or API Fallback triggered:', err);
-                // ระบบสำรองกรณีเกิด Failed to fetch เพื่อให้งานเดินหน้าต่อได้ทันที
-                const shuffled = [...entries].sort(() => 0.5 - Math.random()).slice(0, count);
-                const fallbackResults = shuffled.map(s => ({
-                    name: s.name,
-                    message: s.message,
-                    criteria: "ความสร้างสรรค์และดวงสมพงษ์",
-                    reason: "AI วิเคราะห์แล้วพบว่า Prompt มีความโดดเด่นสะดุดตาและตอบโจทย์ธีมงาน MedChic มากที่สุด!"
-                }));
-                renderWinners(fallbackResults);
-            } finally {
-                loading.classList.add('hidden'); winnersList.classList.remove('hidden');
-                if(typeof confetti === 'function') confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
-            }
-        }
-
-        function renderWinners(winners) {
-            const list = document.getElementById('ai-winners-list');
-            list.innerHTML = '';
-            winners.forEach((w, i) => {
-                list.innerHTML += `
-                <div class="p-5 rounded-2xl bg-gradient-to-br from-white to-slate-50 border border-slate-200 shadow-sm text-left space-y-4 mb-3">
-                    <div class="flex items-center justify-between"><span class="px-3 py-1 bg-brand-600 text-white font-bold text-xs rounded-full">ผู้โชคดีคนที่ ${i+1}</span></div>
-                    <div>
-                        <h4 class="font-bold text-slate-900 text-xl">${escapeHtml(w.name)}</h4>
-                        <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100/50 mt-3 relative">
-                            <p class="text-sm text-slate-700 italic font-medium">"${escapeHtml(w.message)}"</p>
-                        </div>
-                    </div>
-                    <div class="pt-3 border-t border-slate-100 text-sm space-y-1">
-                        <p><span class="font-bold text-brand-600">เกณฑ์ที่ชนะ:</span> ${escapeHtml(w.criteria)}</p>
-                        <p><span class="font-bold">เหตุผล:</span> ${escapeHtml(w.reason)}</p>
-                    </div>
-                </div>`;
+            entries.forEach((item, index) => {
+                textToCopy += `#${index + 1} ชื่อ: ${item.name} | Prompt: ${item.message}\n`;
             });
+
+            // คัดลอกลง Clipboard
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast(`คัดลอก Prompt และข้อมูลทั้งหมด (${entries.length} รายการ) เรียบร้อย!`, 'success');
+            } catch (err) {
+                showToast('ไม่สามารถคัดลอกข้อมูลได้', 'error');
+            }
+            document.body.removeChild(textArea);
         }
 
         function getUserUrl() { return window.location.href.split('?')[0] + '?view=user'; }
@@ -421,7 +364,6 @@
             if (fs.classList.contains('hidden')) {
                 document.getElementById('fs-qrcode-render').innerHTML = '';
                 new QRCode(document.getElementById('fs-qrcode-render'), { text: getUserUrl(), width: 320, height: 320, colorDark: "#312e81", colorLight: "#ffffff" });
-                fs.classList.add('hidden'); // Fix toggle direction
                 fs.classList.remove('hidden');
             } else { fs.classList.add('hidden'); }
         }
@@ -429,7 +371,6 @@
         function closeQrModal() { document.getElementById('qr-modal').classList.add('hidden'); }
         function showThankYouModal() { document.getElementById('thankyou-modal').classList.remove('hidden'); }
         function closeThankYouModal() { document.getElementById('thankyou-modal').classList.add('hidden'); }
-        function closeWinnerModal() { document.getElementById('winner-modal').classList.add('hidden'); }
         function showToast(msg, type='info') {
             const t = document.getElementById('toast');
             document.getElementById('toast-message').textContent = msg;
