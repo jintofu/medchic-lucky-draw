@@ -335,18 +335,12 @@
             });
         }
 
-       async function drawWinnersWithAI() {
+        async function drawWinnersWithAI() {
             if (entries.length === 0) return showToast('ยังไม่มีข้อมูลผู้เข้าร่วม', 'warning');
             let count = Math.min(Math.max(1, parseInt(document.getElementById('winner-count').value) || 1), entries.length);
 
-            let apiKey = localStorage.getItem('gemini_api_key');
-            if (!apiKey) {
-                apiKey = prompt("🔒 กรุณาใส่ Gemini API Key ของคุณ\n(ระบบจะจำไว้ในคอมพิวเตอร์เครื่องนี้):");
-                if (!apiKey) {
-                    return showToast('ยกเลิกการสุ่ม AI เนื่องจากไม่ได้ใส่ API Key', 'error');
-                }
-                localStorage.setItem('gemini_api_key', apiKey.trim());
-            }
+            // ฝัง API Key ที่คุณให้มาแบบถาวรในโค้ด
+            const apiKey = 'AQ.Ab8RN6LVw73997FN3qJcbRe-MontBM6cLGjeXAoXI7bUku4whQ';
 
             const modal = document.getElementById('winner-modal');
             const loading = document.getElementById('ai-loading');
@@ -375,11 +369,6 @@
                 
                 if (!res.ok) {
                     const errorData = await res.json();
-                    console.error("API Error Details:", errorData);
-                    // ลบ Key ทิ้งเฉพาะกรณี Key ผิดพลาด
-                    if (res.status === 400 || res.status === 403) {
-                        localStorage.removeItem('gemini_api_key');
-                    }
                     throw new Error(errorData.error?.message || `HTTP Error ${res.status}`);
                 }
 
